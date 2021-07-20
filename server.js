@@ -45,6 +45,41 @@ app.get("/api/workouts", async(req, res) => {
     }
 });
 
+//-----Post Workout-----\\
+app.post("/api/workouts", async(req, res) => {
+    try {
+        const newWorkoutData = await Workout.create(req.body);
+        console.log(newWorkoutData);
+        res.status(200).json(newWorkoutData);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+app.get("/api/workouts/range", async(req, res) => {
+    try {
+        const workoutsData = await Workout.find({}).sort({ day: -1 }).limit(7);
+        const workouts = workoutsData.reverse();
+        if (!workouts.length) {
+            res.status(404).json({ message: "No Workouts found in the database" });
+        } else {
+            res.status(200).json(workouts);
+        }
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+app.put("/api/workouts/:id", async(req, res) => {
+    try {
+        console.log(req.body);
+        const workoutData = await Workout.findByIdAndUpdate({ _id: req.params.id }, { $push: { exercises: req.body } });
+        console.log(workoutData);
+        res.status(200).json(req.body);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
 
 app.listen(PORT, () => {
     console.log("Server running!");
