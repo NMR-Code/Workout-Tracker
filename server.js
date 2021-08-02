@@ -1,86 +1,29 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const Workout = require("./models/models.js");
-const path = require('path');
+const express = require('express')
+const mongoose = require('mongoose')
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000
 
-//-----Express-Server-----\\
+mongoose.connect(
+   process.env.MONGODB_URI || 'mongodb://localhost:27017/workout',
+   {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useCreateIndex: true,
+      useFindAndModify: false,
+   }
+)
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+const app = express()
 
-//-----Mongoose-Connection-----\\
-mongoose.connect("mongodb://localhost:27017/workout", { useNewUrlParser: true, useFindAndModify: false, useUnifiedTopology: true, useCreateIndex: true });
+// Middleware
+app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
 
-//Static Routes-----\\
+app.use(express.static('public'))
 
-app.get("/", (req, res) => {
-    res.sendFile(`${__dirname}/public/index.html`);
-});
-
-app.get("/stats", (req, res) => {
-    res.sendFile(`${__dirname}/public/stats.html`);
-});
-
-app.get("/exercise", (req, res) => {
-    res.sendFile(`${__dirname}/public/exercise.html`);
-});
-
-//-----Routes-----\\
-
-//-----Get Workouts-----\\
-app.get("/api/workouts", async(req, res) => {
-    try {
-        const workoutsData = await Workout.find({});
-        if (!workoutsData.length) {
-            res.status(404).json({ message: "No Workouts found in the database" });
-        } else {
-            res.status(200).json(workoutsData);
-        }
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
-
-//-----Post Workout-----\\
-app.post("/api/workouts", async(req, res) => {
-    try {
-        const newWorkoutData = await Workout.create(req.body);
-        console.log(newWorkoutData);
-        res.status(200).json(newWorkoutData);
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
-
-app.get("/api/workouts/range", async(req, res) => {
-    try {
-        const workoutsData = await Workout.find({}).sort({ day: -1 }).limit(7);
-        const workouts = workoutsData.reverse();
-        if (!workouts.length) {
-            res.status(404).json({ message: "No Workouts found in the database" });
-        } else {
-            res.status(200).json(workouts);
-        }
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
-
-app.put("/api/workouts/:id", async(req, res) => {
-    try {
-        console.log(req.body);
-        const workoutData = await Workout.findByIdAndUpdate({ _id: req.params.id }, { $push: { exercises: req.body } });
-        console.log(workoutData);
-        res.status(200).json(req.body);
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
+// routes
+app.use(require('./routes'))
 
 app.listen(PORT, () => {
-    console.log("Server running!");
-});
+   console.log(`App running on port ${PORT}!`)
+})
